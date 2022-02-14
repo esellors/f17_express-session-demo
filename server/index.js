@@ -11,14 +11,15 @@ const db = require('../fakeDb.json')
 
 app.use(express.json());
 
+// express-session stuff
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
-       maxAge: 1000 * 60 * 60 * 24 * 7
+        maxAge: 1000 * 60 * 60 * 24 * 7
     }
- }));
+}))
 
 // id for users (actual db would handle this with data type 'serial')
 let id = 0
@@ -33,25 +34,26 @@ app.post('/auth/register', (req, res) => {
         return res.status(403).send('Username taken!')
     }
 
-    // username good? handle password
+    // username good and handle password
     const salt = bcrypt.genSaltSync()
     const hash = bcrypt.hashSync(password, salt)
 
-    // add new user
+    // add user to "db"
     const newUser = {
         id, name, email, hash
     }
 
     db.push(newUser)
 
-    // login user
+    // log in user
     req.session.user = {
         id, name, email
     }
 
+    // set up id for next user for our fake db
     id++
 
-    res.status(200).send(db)
+    res.status(200).send(req.session.user);
 })
 
 app.post('/auth/login', (req, res) => {
@@ -73,22 +75,24 @@ app.post('/auth/login', (req, res) => {
 
     // password good? log in user
     req.session.user = { ...db[userIndex] }
-    delete req.session.hash
+    delete req.session.hash // no need to store hash on session object
 
     res.status(200).send(req.session.user)
 })
 
 app.post('/auth/logout', (req, res) => {
-    req.session.destroy()
+    // kills the session server side
+    req.session.destroy();
 
     res.sendStatus(200)
 })
 
 app.get('/auth/getUser', (req, res) => {
+    // if we need that a user is logged in, can always just have the front end send request for req.session.user
     if (req.session.user) {
         res.status(200).send(req.session.user)
     } else {
-        res.sendStatus(400)
+        res.sendStatus(403)
     }
 })
 

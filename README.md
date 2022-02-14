@@ -1,0 +1,1 @@
+Be sure to run 'npm i', and create .env file to store SERVER_PORT and SESSION_SECRET
